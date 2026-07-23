@@ -1845,3 +1845,292 @@ button {
     flex-wrap: wrap;
   }
 }
+
+/* Product workspace refresh */
+:root {
+  --bg: #f6f7f4;
+  --bg-soft: #eef2ec;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --line: rgba(31, 41, 35, 0.1);
+  --text: #202923;
+  --muted: #69736d;
+  --accent: #32a879;
+  --accent-strong: #087455;
+  --accent-soft: rgba(50, 168, 121, 0.1);
+  --shadow: 0 12px 34px rgba(31, 41, 35, 0.07);
+  --radius-xl: 16px;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+}
+
+body {
+  background: linear-gradient(180deg, #f8f9f6 0%, #eef2ec 100%);
+  font-size: 14px;
+}
+
+.site-shell {
+  overflow: visible;
+  padding-bottom: 1.25rem;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  padding: 0.7rem max(1rem, calc((100vw - var(--content-width)) / 2));
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+}
+
+.topbar-brand strong,
+.brand-block h1,
+.mastodon-timeline-header h2,
+.hero-banner h2,
+.composer h3,
+.timeline h3,
+.right-rail h3,
+.auth-intro h2 {
+  font-family: "Manrope", sans-serif;
+  letter-spacing: 0;
+}
+
+.mastodon-shell {
+  width: min(calc(100% - 2rem), var(--content-width));
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.panel,
+.post-card,
+.community-card,
+.relay-item,
+.actor-result-card,
+.legal-card,
+.support-card,
+.support-note {
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.mastodon-search-panel,
+.mastodon-profile-panel,
+.mastodon-compose-card-priority {
+  background: #fff;
+}
+
+.button,
+.composer-chip,
+.composer-icon-button,
+.search-input-shell,
+.comment-input,
+.poll-input,
+.link-preview-card,
+.payment-chip,
+.timeline-poll-option {
+  border-radius: 8px;
+}
+
+.button-primary {
+  background: #087455;
+  box-shadow: 0 10px 20px rgba(8, 116, 85, 0.16);
+}
+
+.button-ghost {
+  background: #f8faf7;
+  border-color: var(--line);
+}
+
+.mastodon-nav-link {
+  min-height: 2.65rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.94rem;
+}
+
+.mastodon-nav-link.is-active,
+.mastodon-nav-link:hover {
+  background: #eef7f2;
+  color: var(--accent-strong);
+}
+
+.mastodon-feed-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.feed-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfa;
+}
+
+.feed-tabs {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 260px;
+  padding: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f3f5f1;
+}
+
+.feed-tabs button {
+  min-height: 2rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.feed-tabs button.is-active {
+  background: #fff;
+  color: var(--accent-strong);
+  box-shadow: 0 4px 12px rgba(31, 41, 35, 0.08);
+}
+
+.post-list {
+  gap: 0;
+}
+
+.mastodon-post-card {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+}
+
+.mastodon-post-card:hover {
+  background: #fcfdfb;
+}
+
+.ghost-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.ghost-action:hover {
+  background: #f1f5ef;
+}
+
+.profile-editor {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.profile-editor input,
+.profile-editor textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  color: var(--text);
+  padding: 0.72rem 0.8rem;
+  resize: vertical;
+}
+
+.side-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mini-action {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f8faf7;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.35rem 0.55rem;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.notification-card {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.notification-card:first-child {
+  border-top: 0;
+}
+
+.notification-card strong,
+.notification-card span {
+  display: block;
+}
+
+.notification-card span,
+.notification-card p {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.notification-card p {
+  margin: 0.35rem 0 0;
+}
+
+.notification-card.is-unread strong::after {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.45rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  vertical-align: middle;
+}
+
+.empty-feed {
+  display: grid;
+  gap: 0.35rem;
+  padding: 2.2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-feed strong {
+  color: var(--text);
+}
+
+@media (max-width: 1180px) {
+  .mastodon-shell {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    position: static;
+  }
+
+  .feed-control-bar {
+    align-items: stretch;
+  }
+
+  .feed-tabs {
+    width: 100%;
+    min-width: 0;
+  }
+}

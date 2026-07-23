@@ -267,6 +267,10 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [following, setFollowing] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [profileDraft, setProfileDraft] = useState({ displayName: "", bio: "" });
+  const [profileState, setProfileState] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [reportState, setReportState] = useState("");
   const [commentDrafts, setCommentDrafts] = useState({});
   const [composerVisibility, setComposerVisibility] = useState(locale === "zh" ? "公开，允许转发引用" : "Public, allow quote posts");
   const [composerLanguage, setComposerLanguage] = useState(locale === "zh" ? "简体中文" : "English");
@@ -293,16 +297,18 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
       refreshFollowing();
       refreshJobs();
       refreshProfile();
+      refreshNotifications();
     } else {
       setFollowing([]);
       setJobs([]);
       setProfile(null);
+      setNotifications([]);
     }
   }, [user?.email]);
 
   const visibleTimeline = useMemo(() => {
     if (activeTab === "local") {
-      return timeline.filter((post) => post.author.instance === instanceMode);
+      return timeline.filter((post) => post.source === "local" || post.author.instance === instanceMode);
     }
     return activeTab === "community" ? timeline.filter((post) => post.audience === "Community") : timeline;
   }, [activeTab, instanceMode, timeline]);
@@ -345,6 +351,52 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     const response = await fetch(`/api/profile?email=${encodeURIComponent(user.email)}`, { cache: "no-store" });
     const payload = await response.json();
     setProfile(payload.profile || null);
+    setProfileDraft({
+      displayName: payload.profile?.displayName || user.displayName || "",
+      bio: payload.profile?.bio || ""
+    });
+  }
+
+  async function refreshNotifications() {
+    if (!user?.email) {
+      return;
+    }
+    const response = await fetch(`/api/notifications?email=${encodeURIComponent(user.email)}`, { cache: "no-store" });
+    const payload = await response.json();
+    setNotifications(payload.notifications || []);
+  }
+
+  async function saveProfile() {
+    if (!user?.email) {
+      openAuth("signup");
+      return;
+    }
+    setProfileState(locale === "zh" ? "正在保存资料..." : "Saving profile...");
+    const response = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: user.email,
+        displayName: profileDraft.displayName,
+        bio: profileDraft.bio
+      })
+    });
+    setProfileState(response.ok ? (locale === "zh" ? "资料已更新。" : "Profile updated.") : "Error");
+    refreshProfile();
+    refreshTimeline();
+  }
+
+  async function markNotificationsRead() {
+    if (!user?.email) {
+      return;
+    }
+    const response = await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email })
+    });
+    const payload = await response.json();
+    setNotifications(payload.notifications || []);
   }
 
   async function handlePublish() {
@@ -468,6 +520,30 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
       })
     });
     refreshTimeline();
+    refreshNotifications();
+  }
+
+  async function reportPost(post) {
+    if (!user) {
+      openAuth("signup");
+      return;
+    }
+    const reason = window.prompt(locale === "zh" ? "举报原因" : "Report reason");
+    if (!reason?.trim()) {
+      return;
+    }
+    const response = await fetch("/api/admin/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reporterEmail: user.email,
+        targetPostId: post.id,
+        targetActor: post.author.handle,
+        reason,
+        details: post.content.slice(0, 240)
+      })
+    });
+    setReportState(response.ok ? (locale === "zh" ? "举报已进入审核队列。" : "Report sent to moderation.") : "Error");
   }
 
   async function voteOnPoll(postId, option) {
@@ -590,10 +666,30 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
             </div>
           </div>
           {user ? (
-            <label className="avatar-upload mastodon-upload">
-              <span>{t.avatarHint}</span>
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} />
-            </label>
+            <>
+              <label className="avatar-upload mastodon-upload">
+                <span>{t.avatarHint}</span>
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+              </label>
+              <div className="profile-editor">
+                <input
+                  aria-label={locale === "zh" ? "昵称" : "Display name"}
+                  value={profileDraft.displayName}
+                  onChange={(event) => setProfileDraft((current) => ({ ...current, displayName: event.target.value }))}
+                />
+                <textarea
+                  aria-label={locale === "zh" ? "简介" : "Bio"}
+                  placeholder={locale === "zh" ? "写一句社区里的自我介绍" : "Add a short profile bio"}
+                  rows={3}
+                  value={profileDraft.bio}
+                  onChange={(event) => setProfileDraft((current) => ({ ...current, bio: event.target.value }))}
+                />
+                <button className="button button-ghost" onClick={saveProfile} type="button">
+                  {locale === "zh" ? "保存资料" : "Save profile"}
+                </button>
+                {profileState ? <p className="inline-status">{profileState}</p> : null}
+              </div>
+            </>
           ) : (
             <button className="button button-primary mastodon-auth-button" onClick={() => openAuth("signup")} type="button">
               {t.profile}
@@ -717,7 +813,14 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
         </section>
 
         <section className="panel mastodon-feed-panel">
-          <p className="helper-copy mastodon-feed-copy">{t.instanceHint}</p>
+          <div className="feed-control-bar">
+            <p className="helper-copy mastodon-feed-copy">{t.instanceHint}</p>
+            <div className="feed-tabs" aria-label={t.timeline}>
+              <button className={activeTab === "federated" ? "is-active" : ""} onClick={() => setActiveTab("federated")} type="button">{t.home}</button>
+              <button className={activeTab === "local" ? "is-active" : ""} onClick={() => setActiveTab("local")} type="button">{t.local}</button>
+              <button className={activeTab === "community" ? "is-active" : ""} onClick={() => setActiveTab("community")} type="button">{t.picks}</button>
+            </div>
+          </div>
           <div className="post-list">
             {visibleTimeline.map((post) => (
               <article className="post-card mastodon-post-card" key={post.id}>
@@ -786,12 +889,14 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
                 ) : null}
 
                 <div className="mastodon-action-row">
-                  <button className={`ghost-action${post.viewerState?.commented ? " is-active" : ""}`} onClick={() => {}} type="button">{t.actions.comment}</button>
-                  <button className={`ghost-action${post.viewerState?.boosted ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "boost")} type="button">{t.actions.boost}</button>
-                  <button className={`ghost-action${post.viewerState?.liked ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "like")} type="button">{t.actions.like}</button>
-                  <button className={`ghost-action${post.viewerState?.bookmarked ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "bookmark")} type="button">{t.actions.bookmark}</button>
+                  <button className={`ghost-action${post.viewerState?.commented ? " is-active" : ""}`} onClick={() => {}} type="button"><span>↩</span>{t.actions.comment}</button>
+                  <button className={`ghost-action${post.viewerState?.boosted ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "boost")} type="button"><span>↻</span>{post.stats.boosts}</button>
+                  <button className={`ghost-action${post.viewerState?.liked ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "like")} type="button"><span>♡</span>{post.stats.favorites}</button>
+                  <button className={`ghost-action${post.viewerState?.bookmarked ? " is-active" : ""}`} onClick={() => mutatePost(post.id, "bookmark")} type="button"><span>⌑</span>{t.actions.bookmark}</button>
+                  <button className="ghost-action" onClick={() => reportPost(post)} type="button"><span>!</span>{locale === "zh" ? "举报" : "Report"}</button>
                   {post.viewerState?.canDelete ? <button className="ghost-action is-danger" onClick={() => mutatePost(post.id, "delete")} type="button">{t.actions.delete}</button> : null}
                 </div>
+                {reportState ? <p className="inline-status">{reportState}</p> : null}
 
                 <div className="post-stats">
                   <span>{post.stats.replies} {t.replies}</span>
@@ -830,6 +935,12 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
                 ) : null}
               </article>
             ))}
+            {!loading && !visibleTimeline.length ? (
+              <div className="empty-feed">
+                <strong>{locale === "zh" ? "这里暂时还没有帖子" : "No posts in this lane yet"}</strong>
+                <span>{locale === "zh" ? "换一个时间线，或者发布第一条动态。" : "Switch lanes, or publish the first update."}</span>
+              </div>
+            ) : null}
           </div>
         </section>
       </main>
@@ -844,6 +955,9 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
           <nav className="mastodon-nav">
             <button className={`mastodon-nav-link${activeTab === "federated" ? " is-active" : ""}`} onClick={() => setActiveTab("federated")} type="button">
               <span className="nav-glyph">⌂</span>{t.home}
+            </button>
+            <button className={`mastodon-nav-link${activeTab === "local" ? " is-active" : ""}`} onClick={() => setActiveTab("local")} type="button">
+              <span className="nav-glyph">◍</span>{t.local}
             </button>
             <button className={`mastodon-nav-link${activeTab === "community" ? " is-active" : ""}`} onClick={() => setActiveTab("community")} type="button">
               <span className="nav-glyph">⌁</span>{t.hotNow}
@@ -871,6 +985,32 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
                 <i className={`trend-spark trend-spark-${index + 1}`} aria-hidden="true" />
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="panel mastodon-side-panel">
+          <div className="side-panel-head">
+            <p className="section-label">{t.notifications}</p>
+            {notifications.some((entry) => !entry.read_at) ? (
+              <button className="mini-action" onClick={markNotificationsRead} type="button">
+                {locale === "zh" ? "全部已读" : "Mark read"}
+              </button>
+            ) : null}
+          </div>
+          <div className="notification-list">
+            {notifications.length ? notifications.slice(0, 6).map((entry) => (
+              <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
+                <strong>{entry.actor_display_name || entry.actor_username}</strong>
+                <span>
+                  {entry.type === "comment"
+                    ? (locale === "zh" ? "评论了你的帖子" : "replied to your post")
+                    : entry.type === "boost"
+                      ? (locale === "zh" ? "转发了你的帖子" : "boosted your post")
+                      : (locale === "zh" ? "赞了你的帖子" : "liked your post")}
+                </span>
+                {entry.summary ? <p>{entry.summary}</p> : null}
+              </article>
+            )) : <p className="empty-state">{locale === "zh" ? "还没有通知。" : "No notifications yet."}</p>}
           </div>
         </section>
 

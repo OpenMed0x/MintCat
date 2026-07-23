@@ -33,8 +33,6 @@ export default function Page() {
     <MintAuthExperience locale={locale}>
       {({ openAuth, user, signOut }) => (
         <div className="site-shell">
-          <div className="ambient ambient-left" />
-          <div className="ambient ambient-right" />
           <header className="topbar">
             <div className="topbar-brand">
               <MintCatLogo small className="mintcat-logo small" />

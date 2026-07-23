@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccountByEmail, updateProfileAvatar } from "../../../lib/oracat/repository";
+import { getAccountByEmail, updateProfile } from "../../../lib/oracat/repository";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,8 @@ export async function GET(request) {
           email: profile.email,
           displayName: profile.display_name,
           username: profile.username,
-          avatarUrl: profile.avatar_url || ""
+          avatarUrl: profile.avatar_url || "",
+          bio: profile.bio || ""
         }
       : null
   });
@@ -25,15 +26,24 @@ export async function GET(request) {
 export async function POST(request) {
   const body = await request.json();
   const email = String(body.email || "").trim();
-  const avatarUrl = String(body.avatarUrl || "").trim();
+  const updates = {};
+  if ("avatarUrl" in body) {
+    updates.avatarUrl = String(body.avatarUrl || "").trim();
+  }
+  if ("displayName" in body) {
+    updates.displayName = String(body.displayName || "").trim();
+  }
+  if ("bio" in body) {
+    updates.bio = String(body.bio || "").trim();
+  }
 
   if (!email) {
     return NextResponse.json({ error: "Email is required." }, { status: 400 });
   }
 
-  const profile = await updateProfileAvatar({
+  const profile = await updateProfile({
     email,
-    avatarUrl
+    ...updates
   });
 
   return NextResponse.json({
@@ -43,7 +53,8 @@ export async function POST(request) {
           email: profile.email,
           displayName: profile.display_name,
           username: profile.username,
-          avatarUrl: profile.avatar_url || ""
+          avatarUrl: profile.avatar_url || "",
+          bio: profile.bio || ""
         }
       : null
   });

@@ -1,29 +1,19 @@
 import { NextResponse } from "next/server";
-import { serverClient } from "../../../../lib/oracat/supabase-server";
+import { createRiskEvent, listRiskEvents } from "../../../../lib/oracat/repository";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const client = serverClient();
-  if (!client) {
-    return NextResponse.json({ events: [] });
-  }
-
-  const { data, error } = await client.from("oracat_risk_events").select("*").order("created_at", { ascending: false }).limit(50);
-  if (error) {
+  try {
+    const events = await listRiskEvents();
+    return NextResponse.json({ events });
+  } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json({ events: data || [] });
 }
 
 export async function POST(request) {
-  const client = serverClient();
   const body = await request.json();
-
-  if (!client) {
-    return NextResponse.json({ error: "Supabase is required." }, { status: 500 });
-  }
 
   let payload = {};
   if (typeof body.payload === "string" && body.payload.trim()) {
@@ -36,20 +26,15 @@ export async function POST(request) {
     payload = body.payload;
   }
 
-  const insert = {
-    event_type: String(body.eventType || "").trim(),
-    severity: String(body.severity || "info").trim() || "info",
-    payload
-  };
-
-  if (!insert.event_type) {
-    return NextResponse.json({ error: "eventType is required." }, { status: 400 });
+  try {
+    const event = await createRiskEvent({
+      eventType: body.eventType,
+      severity: body.severity,
+      payload
+    });
+    return NextResponse.json({ ok: true, event });
+  } catch (error) {
+    const status = /required/.test(error.message || "") ? 400 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
-
-  const { data, error } = await client.from("oracat_risk_events").insert(insert).select("*").single();
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, event: data });
 }
