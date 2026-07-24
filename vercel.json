@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/federation/process-queue",
-      "schedule": "0 1 * * * *"
+      "schedule": "0 1 * * *"
     }
   ]
 }
