@@ -25,7 +25,7 @@ export async function POST(request) {
     displayName,
     request
   });
-  const remoteActor = await searchRemoteAccount(query);
+  const remoteActor = await searchRemoteAccount(query, localAccount);
   if (!remoteActor) {
     return NextResponse.json({ error: "Remote actor not found." }, { status: 404 });
   }
