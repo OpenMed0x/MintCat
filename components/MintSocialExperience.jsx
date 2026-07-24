@@ -312,19 +312,27 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     }
     return activeTab === "community" ? timeline.filter((post) => post.audience === "Community") : timeline;
   }, [activeTab, instanceMode, timeline]);
+  
+ const timelineRequestId = useRef(0);
 
-  async function refreshTimeline() {
-    setLoading(true);
-    try {
-      const suffix = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
-      const response = await fetch(`/api/timeline${suffix}`, { cache: "no-store" });
-      const payload = await response.json();
-      setTimeline(payload.posts || []);
-      setSummary(payload.summary || { posts: 0, authors: 0, instances: 0 });
-    } finally {
+ async function refreshTimeline() {
+  const requestId = ++timelineRequestId.current;
+  setLoading(true);
+  try {
+    const suffix = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+    const response = await fetch(`/api/timeline${suffix}`, { cache: "no-store" });
+    const payload = await response.json();
+    if (requestId !== timelineRequestId.current) {
+      return;
+    }
+    setTimeline(payload.posts || []);
+    setSummary(payload.summary || { posts: 0, authors: 0, instances: 0 });
+  } finally {
+    if (requestId === timelineRequestId.current) {
       setLoading(false);
     }
   }
+}
 
   async function refreshFollowing() {
     if (!user?.email) {
