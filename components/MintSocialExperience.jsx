@@ -452,17 +452,18 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     });
   }
 
-  async function handleSearch() {
-    const query = searchQuery.trim();
-    if (!query) {
-      return;
-    }
-    setSearchState(t.searchSearching);
-    const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`, { cache: "no-store" });
-    const payload = await response.json();
-    setSearchResult(payload.result || null);
-    setSearchState(payload.result ? t.searchFound : t.searchMissing);
+async function handleSearch() {
+  const query = searchQuery.trim();
+  if (!query) {
+    return;
   }
+  setSearchState(t.searchSearching);
+  const emailSuffix = user?.email ? `&email=${encodeURIComponent(user.email)}` : "";
+  const response = await fetch(`/api/search?query=${encodeURIComponent(query)}${emailSuffix}`, { cache: "no-store" });
+  const payload = await response.json();
+  setSearchResult(payload.result || null);
+  setSearchState(payload.result ? t.searchFound : t.searchMissing);
+}
 
   async function handleFollow() {
     if (!user) {
