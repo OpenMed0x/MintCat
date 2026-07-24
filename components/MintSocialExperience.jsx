@@ -353,7 +353,8 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     setProfile(payload.profile || null);
     setProfileDraft({
       displayName: payload.profile?.displayName || user.displayName || "",
-      bio: payload.profile?.bio || ""
+      bio: payload.profile?.bio || "",
+      avatarUrl: payload.profile?.avatarUrl || ""
     });
   }
 
@@ -483,7 +484,7 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     });
   }
 
-  async function handleAvatarUpload(event) {
+async function handleAvatarUpload(event) {
     const file = event.target.files?.[0];
     if (!file || !user?.email) {
       return;
@@ -491,38 +492,72 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
 
     const reader = new FileReader();
     reader.onload = async () => {
-      await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: user.email,
-          avatarUrl: String(reader.result || "")
-        })
-      });
-      refreshProfile();
-      refreshTimeline();
+      const avatarDataUrl = String(reader.result || "");
+
+      // 1. 立即更新本地草稿与展示状态，确保用户在 UI 上能立刻看到自己刚上传的真实图片
+      setProfileDraft((current) => ({
+        ...current,
+        avatarUrl: avatarDataUrl
+      }));
+      setProfile((current) => (current ? { ...current, avatarUrl: avatarDataUrl } : { avatarUrl: avatarDataUrl }));
+
+      // 2. 异步提交到后端保存至数据库
+      try {
+        const response = await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            avatarUrl: avatarDataUrl
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save avatar to server");
+        }
+
+        // 3. 成功后同步拉取最新服务器状态与时间线
+        await Promise.all([refreshProfile(), refreshTimeline()]);
+      } catch (error) {
+        console.error("Avatar upload sync error:", error);
+      } finally {
+        if (event.target) {
+          event.target.value = "";
+        }
+      }
+    };
+    reader.onerror = () => {
+      console.error("FileReader error occurred while reading avatar file.");
     };
     reader.readAsDataURL(file);
   }
-
-  async function mutatePost(postId, action, content = "") {
-    if (!user) {
-      openAuth("signup");
-      return;
-    }
-    await fetch(`/api/posts/${postId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        displayName: user.displayName,
-        action,
-        content
-      })
-    });
-    refreshTimeline();
-    refreshNotifications();
+  
+async function mutatePost(postId, action, content = "") {
+  if (!user) {
+    openAuth("signup");
+    return;
   }
+
+  // 🚀 优化 1：如果是删除操作，前端直接本地过滤，防止误清空
+  if (action === "delete") {
+    setTimeline((current) => current.filter((post) => post.id !== postId));
+  }
+
+  await fetch(`/api/posts/${postId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: user.email,
+      displayName: user.displayName,
+      action,
+      content
+    })
+  });
+
+  // 异步同步最新状态
+  refreshTimeline();
+  refreshNotifications();
+}
 
   async function reportPost(post) {
     if (!user) {
