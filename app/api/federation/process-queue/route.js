@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deliverCreateToFollowers, deliverFollow } from "../../../../lib/oracat/delivery";
+import { deliverCreateToFollowers, deliverFollow,deliverUnfollow } from "../../../../lib/oracat/delivery";
 import { recordRiskEvent } from "../../../../lib/oracat/risk-events";
 import {
   claimPendingDeliveryJobs,
@@ -73,6 +73,21 @@ async function processJob(job) {
     await deliverFollow({
       localAccount: account,
       remoteActor,
+      baseUrl: job.payload.base_url
+    });
+    return;
+  }
+
+  if (job.job_type === "deliver_unfollow") {
+    const account = await getAccountByUsername(job.payload.account_username);
+    if (!account) {
+      throw new Error("Local account missing.");
+    }
+    const remoteActor = await importRemoteActor(job.payload.remote_actor_url);
+    await deliverUnfollow({
+      localAccount: account,
+      remoteActor,
+      originalFollowId: `${account.username}#follows/undo`,
       baseUrl: job.payload.base_url
     });
     return;

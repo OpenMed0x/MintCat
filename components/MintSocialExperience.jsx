@@ -484,6 +484,26 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     });
   }
 
+  async function handleUnfollow(actorUrl) {
+  if (!user) {
+    return;
+  }
+  const response = await fetch("/api/follow", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      actorUrl,
+      email: user.email,
+      displayName: user.displayName
+    })
+  });
+  if (!response.ok) {
+    return;
+  }
+  refreshFollowing();
+}
+
+
 async function handleAvatarUpload(event) {
     const file = event.target.files?.[0];
     if (!file || !user?.email) {
@@ -1084,6 +1104,13 @@ async function mutatePost(postId, action, content = "") {
                 <strong>{account.displayName}</strong>
                 <span>{account.handle}</span>
                 <p>{t.state}: {account.followingState}</p>
+                <button
+                  className="button button-ghost"
+                  onClick={() => handleUnfollow(account.actorUrl)}
+                  type="button"
+                >
+                  {locale === "zh" ? "取消关注" : "Unfollow"}
+                </button>
               </article>
             )) : <p className="empty-state">{t.noFollowing}</p>}
           </div>
