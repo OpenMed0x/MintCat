@@ -531,32 +531,46 @@ async function handleAvatarUpload(event) {
     };
     reader.readAsDataURL(file);
   }
-  
-async function mutatePost(postId, action, content = "") {
-  if (!user) {
-    openAuth("signup");
-    return;
-  }
 
-  // 🚀 优化 1：如果是删除操作，前端直接本地过滤，防止误清空
+async function mutatePost(postId, action, content = "") {
+  if (!user) { openAuth("signup"); return; }
+
   if (action === "delete") {
     setTimeline((current) => current.filter((post) => post.id !== postId));
+  } else if (["like", "boost", "bookmark"].includes(action)) {
+    // 乐观更新：立刻在本地切换状态和数字，不等后端返回
+    setTimeline((current) =>
+      current.map((post) => {
+        if (post.id !== postId) return post;
+        const key = action === "like" ? "liked" : action === "boost" ? "boosted" : "bookmarked";
+        const statKey = action === "like" ? "favorites" : action === "boost" ? "boosts" : null;
+        const wasActive = post.viewerState?.[key];
+        return {
+          ...post,
+          viewerState: { ...post.viewerState, [key]: !wasActive },
+          stats: statKey
+            ? { ...post.stats, [statKey]: post.stats[statKey] + (wasActive ? -1 : 1) }
+            : post.stats
+        };
+      })
+    );
   }
 
-  await fetch(`/api/posts/${postId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: user.email,
-      displayName: user.displayName,
-      action,
-      content
-    })
-  });
-
-  // 异步同步最新状态
-  refreshTimeline();
-  refreshNotifications();
+  try {
+    const response = await fetch(`/api/posts/${postId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, displayName: user.displayName, action, content })
+    });
+    if (!response.ok) {
+      throw new Error("mutate failed");
+    }
+  } catch (error) {
+    console.error("mutatePost error:", error);
+  } finally {
+    refreshTimeline();
+    refreshNotifications();
+  }
 }
 
   async function reportPost(post) {
