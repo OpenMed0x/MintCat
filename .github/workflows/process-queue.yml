@@ -1,0 +1,16 @@
+name: Process Federation Queue
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-queue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call process-queue endpoint
+        run: |
+          curl -X POST https://mintcat.vercel.app/api/federation/process-queue \
+            -H "x-oracat-queue-token: ${{ secrets.QUEUE_TOKEN }}" \
+            -f
