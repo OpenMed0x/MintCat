@@ -378,7 +378,8 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
       body: JSON.stringify({
         email: user.email,
         displayName: profileDraft.displayName,
-        bio: profileDraft.bio
+        bio: profileDraft.bio,
+        avatarUrl: profileDraft.avatarUrl
       })
     });
     setProfileState(response.ok ? (locale === "zh" ? "资料已更新。" : "Profile updated.") : "Error");

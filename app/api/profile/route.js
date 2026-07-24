@@ -34,7 +34,8 @@ export async function POST(request) {
     updates.displayName = String(body.displayName || "").trim();
   }
   if ("bio" in body) {
-    updates.bio = String(body.bio || "").trim();
+    updates.
+    bio = String(body.bio || "").trim();
   }
 
   if (!email) {
