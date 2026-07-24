@@ -490,46 +490,58 @@ async function handleAvatarUpload(event) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const avatarDataUrl = String(reader.result || "");
+    setProfileState(locale === "zh" ? "正在上传头像..." : "Uploading avatar...");
 
-      // 1. 立即更新本地草稿与展示状态，确保用户在 UI 上能立刻看到自己刚上传的真实图片
+    try {
+      // 1. 先把图片真正上传到 Supabase Storage，拿到一个公开可访问的 URL
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload avatar image");
+      }
+
+      const uploadPayload = await uploadResponse.json();
+      const avatarUrl = uploadPayload.url;
+
+      // 2. 立即更新本地草稿与展示状态
       setProfileDraft((current) => ({
         ...current,
-        avatarUrl: avatarDataUrl
+        avatarUrl
       }));
-      setProfile((current) => (current ? { ...current, avatarUrl: avatarDataUrl } : { avatarUrl: avatarDataUrl }));
+      setProfile((current) => (current ? { ...current, avatarUrl } : { avatarUrl }));
 
-      // 2. 异步提交到后端保存至数据库
-      try {
-        const response = await fetch("/api/profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            avatarUrl: avatarDataUrl
-          })
-        });
+      // 3. 把真实 URL（不是 base64）保存到数据库
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          avatarUrl
+        })
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to save avatar to server");
-        }
-
-        // 3. 成功后同步拉取最新服务器状态与时间线
-        await Promise.all([refreshProfile(), refreshTimeline()]);
-      } catch (error) {
-        console.error("Avatar upload sync error:", error);
-      } finally {
-        if (event.target) {
-          event.target.value = "";
-        }
+      if (!response.ok) {
+        throw new Error("Failed to save avatar to server");
       }
-    };
-    reader.onerror = () => {
-      console.error("FileReader error occurred while reading avatar file.");
-    };
-    reader.readAsDataURL(file);
+
+      setProfileState(locale === "zh" ? "头像已更新。" : "Avatar updated.");
+
+      // 4. 成功后同步拉取最新服务器状态与时间线
+      await Promise.all([refreshProfile(), refreshTimeline()]);
+    } catch (error) {
+      console.error("Avatar upload sync error:", error);
+      setProfileState(locale === "zh" ? "头像上传失败。" : "Avatar upload failed.");
+    } finally {
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
   }
 
 async function mutatePost(postId, action, content = "") {
