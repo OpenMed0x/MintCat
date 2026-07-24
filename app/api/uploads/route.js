@@ -71,7 +71,7 @@ export async function POST(request) {
     });
   }
 
-  const bucket = process.env.ORACAT_MEDIA_BUCKET || "mintcat-media";
+  const bucket = process.env.MINTCAT_MEDIA_BUCKET || "mintcat-media";
   const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
   const path = `posts/${Date.now()}-${randomUUID()}.${extension}`;
   const contentType = file.type || "application/octet-stream";
@@ -94,6 +94,7 @@ export async function POST(request) {
       { status: 500 }
     );
   }
+
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
   return NextResponse.json({
