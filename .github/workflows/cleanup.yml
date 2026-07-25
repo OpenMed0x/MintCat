@@ -1,0 +1,16 @@
+name: Cleanup Old Posts
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup endpoint
+        run: |
+          curl -X POST https://mintcat.vercel.app/api/federation/cleanup \
+            -H "x-oracat-queue-token: ${{ secrets.QUEUE_TOKEN }}" \
+            -f
