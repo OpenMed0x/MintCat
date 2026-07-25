@@ -162,7 +162,7 @@ const copy = {
     searchPlaceholder: "@alice@example.social 或 https://example.social/users/alice",
     searchButton: "搜索",
     follow: "关注",
-    following: "关注列表",
+    following: "我关注的人",
     compose: "发帖",
     composeTitle: "发布一条新的动态",
     composePrompt: "想写什么？",
