@@ -10,7 +10,8 @@ import {
   saveInboxActivity,
   saveRemotePost,
   upsertRemoteActor,
-  createFollowNotification
+  createFollowNotification,
+  applyRemoteInteractionToLocalPost
 } from "../../../../lib/oracat/repository";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,24 @@ export async function POST(request, { params }) {
       raw_object: activity.object
     });
   }
+  if (activity.type === "Like") {
+    const postId = extractPostIdFromObject(activity.object, username);
+    if (postId) {
+      const actorHandle = remoteActor
+        ? `${remoteActor.preferred_username}@${new URL(remoteActor.actor_url).host}`
+        : activity.actor;
+      await applyRemoteInteractionToLocalPost({ postId, actorHandle, action: "like" });
+    }
+  }
+  if (activity.type === "Announce") {
+    const postId = extractPostIdFromObject(activity.object, username);
+    if (postId) {
+      const actorHandle = remoteActor
+        ? `${remoteActor.preferred_username}@${new URL(remoteActor.actor_url).host}`
+        : activity.actor;
+      await applyRemoteInteractionToLocalPost({ postId, actorHandle, action: "boost" });
+    }
+  }
 
   if (activity.type === "Accept") {
     const acceptedActorUrl =
@@ -106,4 +125,17 @@ function safeImportRemoteActor(actorUrl) {
 
 function acceptedStatus() {
   return 202;
+}
+// 加一个解析帖子id的工具函数
+function extractPostIdFromObject(object, username) {
+  const objectUrl = typeof object === "string" ? object : object?.id;
+  if (!objectUrl) {
+    return null;
+  }
+  const marker = `/users/${username}/statuses/`;
+  const index = objectUrl.indexOf(marker);
+  if (index === -1) {
+    return null;
+  }
+  return objectUrl.slice(index + marker.length);
 }
