@@ -268,6 +268,9 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [searchResult, setSearchResult] = useState(null);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
+  const [notificationsExpanded, setNotificationsExpanded] = useState(false);
+  const [followingPanelExpanded, setFollowingPanelExpanded] = useState(false);
+  const [followerPanelExpanded, setFollowerPanelExpanded] = useState(false);
   const [expandedFollowing, setExpandedFollowing] = useState(null);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [jobs, setJobs] = useState([]);
@@ -1095,30 +1098,47 @@ async function mutatePost(postId, action, content = "") {
           </div>
         </section>
 
-        <section className="panel mastodon-side-panel">
-          <div className="side-panel-head">
-            <p className="section-label">{t.notifications}</p>
-            {notifications.some((entry) => !entry.read_at) ? (
-              <button className="mini-action" onClick={markNotificationsRead} type="button">
+<section className="panel mastodon-side-panel">
+          <div
+            className="side-panel-head"
+            onClick={() => setNotificationsExpanded((current) => !current)}
+            style={{ cursor: "pointer" }}
+          >
+            <p className="section-label">
+              {t.notifications} {notificationsExpanded ? "▲" : "▼"} ({notifications.length})
+            </p>
+            {notificationsExpanded && notifications.some((entry) => !entry.read_at) ? (
+              <button
+                className="mini-action"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  markNotificationsRead();
+                }}
+                type="button"
+              >
                 {locale === "zh" ? "全部已读" : "Mark read"}
               </button>
             ) : null}
           </div>
-          <div className="notification-list">
-            {notifications.length ? notifications.slice(0, 6).map((entry) => (
-              <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
-                <strong>{entry.actor_display_name || entry.actor_username}</strong>
-                <span>
-                  {entry.type === "comment"
-                    ? (locale === "zh" ? "评论了你的帖子" : "replied to your post")
-                    : entry.type === "boost"
-                      ? (locale === "zh" ? "转发了你的帖子" : "boosted your post")
-                      : (locale === "zh" ? "赞了你的帖子" : "liked your post")}
-                </span>
-                {entry.summary ? <p>{entry.summary}</p> : null}
-              </article>
-            )) : <p className="empty-state">{locale === "zh" ? "还没有通知。" : "No notifications yet."}</p>}
-          </div>
+          {notificationsExpanded ? (
+            <div className="notification-list">
+              {notifications.length ? notifications.slice(0, 6).map((entry) => (
+                <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
+                  <strong>{entry.actor_display_name || entry.actor_username}</strong>
+                  <span>
+                    {entry.type === "comment"
+                      ? (locale === "zh" ? "评论了你的帖子" : "replied to your post")
+                      : entry.type === "boost"
+                        ? (locale === "zh" ? "转发了你的帖子" : "boosted your post")
+                        : entry.type === "follow"
+                          ? (locale === "zh" ? "关注了你" : "followed you")
+                          : (locale === "zh" ? "赞了你的帖子" : "liked your post")}
+                  </span>
+                  {entry.summary ? <p>{entry.summary}</p> : null}
+                </article>
+              )) : <p className="empty-state">{locale === "zh" ? "还没有通知。" : "No notifications yet."}</p>}
+            </div>
+          ) : null}
         </section>
 
         <section className="mastodon-side-panel mastodon-follow-panel">
