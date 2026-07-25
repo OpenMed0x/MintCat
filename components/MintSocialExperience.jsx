@@ -4,8 +4,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MintCatLogo from "./MintCatLogo";
 
-const [expandedFollowing, setExpandedFollowing] = useState(null);
-const [jobsExpanded, setJobsExpanded] = useState(false);
+
 
 const emojiLibrary = [
   "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊",
@@ -268,6 +267,8 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [searchState, setSearchState] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [following, setFollowing] = useState([]);
+  const [expandedFollowing, setExpandedFollowing] = useState(null);
+  const [jobsExpanded, setJobsExpanded] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [profile, setProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", bio: "" });
