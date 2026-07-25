@@ -9,7 +9,8 @@ import {
   markFollowingAccepted,
   saveInboxActivity,
   saveRemotePost,
-  upsertRemoteActor
+  upsertRemoteActor,
+  createFollowNotification
 } from "../../../../lib/oracat/repository";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,11 @@ export async function POST(request, { params }) {
       localUsername: username,
       remoteActor
     });
-
+    await createFollowNotification({
+    recipientUsername: username,
+    actorUsername: remoteActor.preferred_username,
+    actorDisplayName: remoteActor.display_name
+  });
     deliverFollowAccept({
       localAccount,
       remoteActor,
