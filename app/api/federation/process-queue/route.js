@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deliverCreateToFollowers, deliverFollow,deliverUnfollow } from "../../../../lib/oracat/delivery";
+import { deliverCreateToFollowers, deliverFollow,deliverUnfollow, deliverFollowAccept } from "../../../../lib/oracat/delivery";
 import { recordRiskEvent } from "../../../../lib/oracat/risk-events";
 import {
   claimPendingDeliveryJobs,
@@ -25,6 +25,20 @@ export async function POST(request) {
   const results = [];
 
   for (const job of jobs) {
+    if (job.job_type === "deliver_follow_accept") {
+  const account = await getAccountByUsername(job.payload.account_username);
+  if (!account) {
+    throw new Error("Local account missing.");
+  }
+  const remoteActor = await importRemoteActor(job.payload.remote_actor_url, account);
+  await deliverFollowAccept({
+    localAccount: account,
+    remoteActor,
+    followActivity: job.payload.follow_activity,
+    baseUrl: job.payload.base_url
+  });
+  return;
+}
     try {
       await processJob(job);
       await markDeliveryJobSucceeded(job.id);
