@@ -4,6 +4,9 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MintCatLogo from "./MintCatLogo";
 
+const [expandedFollowing, setExpandedFollowing] = useState(null);
+const [jobsExpanded, setJobsExpanded] = useState(false);
+
 const emojiLibrary = [
   "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊",
   "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
@@ -1108,20 +1111,44 @@ async function mutatePost(postId, action, content = "") {
         <section className="mastodon-side-panel mastodon-follow-panel">
           <p className="section-label">{t.following}</p>
           <div className="community-list">
-            {following.length ? following.map((account) => (
-              <article className="community-card mastodon-follow-card" key={account.actorUrl}>
-                <strong>{account.displayName}</strong>
-                <span>{account.handle}</span>
-                <p>{t.state}: {account.followingState}</p>
-                <button
-                  className="button button-ghost"
-                  onClick={() => handleUnfollow(account.actorUrl)}
-                  type="button"
-                >
-                  {locale === "zh" ? "取消关注" : "Unfollow"}
-                </button>
-              </article>
-            )) : <p className="empty-state">{t.noFollowing}</p>}
+            {following.length ? following.map((account) => {
+              const isExpanded = expandedFollowing === account.actorUrl;
+              return (
+                <article className="community-card mastodon-follow-card" key={account.actorUrl}>
+                  <div
+                    className="follow-card-head"
+                    onClick={() => setExpandedFollowing(isExpanded ? null : account.actorUrl)}
+                    style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                  >
+                    <div className="avatar-shell" style={{ width: 32, height: 32 }}>
+                      {account.avatarUrl ? (
+                        <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
+                      ) : (
+                        <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <strong>{account.displayName}</strong>
+                      <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
+                    </div>
+                    <span>{isExpanded ? "▲" : "▼"}</span>
+                  </div>
+                  {isExpanded ? (
+                    <div className="follow-card-body">
+                      {account.summary ? <p>{account.summary}</p> : null}
+                      <p>{t.state}: {account.followingState}</p>
+                      <button
+                        className="button button-ghost"
+                        onClick={() => handleUnfollow(account.actorUrl)}
+                        type="button"
+                      >
+                        {locale === "zh" ? "取消关注" : "Unfollow"}
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            }) : <p className="empty-state">{t.noFollowing}</p>}
           </div>
         </section>
 
@@ -1150,18 +1177,25 @@ async function mutatePost(postId, action, content = "") {
           <p className="support-mini-note">{t.paymentHint}</p>
         </section>
 
-        <section className="panel mastodon-side-panel">
-          <p className="section-label">{t.queue}</p>
-          <h3>{t.queue}</h3>
-          <div className="community-list">
-            {jobs.length ? jobs.map((job) => (
-              <article className="community-card" key={job.id}>
-                <strong>{job.job_type}</strong>
-                <span>{job.state}</span>
-                <p>{t.attempts}: {job.attempt_count} / {job.max_attempts}</p>
-              </article>
-            )) : <p className="empty-state">{t.noJobs}</p>}
-          </div>
+<section className="panel mastodon-side-panel">
+          <p
+            className="section-label"
+            onClick={() => setJobsExpanded((current) => !current)}
+            style={{ cursor: "pointer" }}
+          >
+            {t.queue} {jobsExpanded ? "▲" : "▼"} ({jobs.length})
+          </p>
+          {jobsExpanded ? (
+            <div className="community-list">
+              {jobs.length ? jobs.map((job) => (
+                <article className="community-card" key={job.id}>
+                  <strong>{job.job_type}</strong>
+                  <span>{job.state}</span>
+                  <p>{t.attempts}: {job.attempt_count} / {job.max_attempts}</p>
+                </article>
+              )) : <p className="empty-state">{t.noJobs}</p>}
+            </div>
+          ) : null}
         </section>
       </aside>
     </div>
