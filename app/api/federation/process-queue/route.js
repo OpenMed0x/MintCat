@@ -62,28 +62,26 @@ async function processJob(job) {
     });
     return;
   }
-
-  if (job.job_type === "deliver_follow") {
-    const account = await getAccountByUsername(job.payload.account_username);
-    if (!account) {
-      throw new Error("Local account missing.");
-    }
-
-    const remoteActor = await importRemoteActor(job.payload.remote_actor_url);
-    await deliverFollow({
-      localAccount: account,
-      remoteActor,
-      baseUrl: job.payload.base_url
-    });
-    return;
+if (job.job_type === "deliver_follow") {
+  const account = await getAccountByUsername(job.payload.account_username);
+  if (!account) {
+    throw new Error("Local account missing.");
   }
+  const remoteActor = await importRemoteActor(job.payload.remote_actor_url, account);
+  await deliverFollow({
+    localAccount: account,
+    remoteActor,
+    baseUrl: job.payload.base_url
+  });
+  return;
+}
 
   if (job.job_type === "deliver_unfollow") {
     const account = await getAccountByUsername(job.payload.account_username);
     if (!account) {
       throw new Error("Local account missing.");
     }
-    const remoteActor = await importRemoteActor(job.payload.remote_actor_url);
+    const remoteActor = await importRemoteActor(job.payload.remote_actor_url, account);
     await deliverUnfollow({
       localAccount: account,
       remoteActor,
