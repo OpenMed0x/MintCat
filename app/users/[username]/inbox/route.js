@@ -11,7 +11,8 @@ import {
   saveRemotePost,
   upsertRemoteActor,
   createFollowNotification,
-  applyRemoteInteractionToLocalPost
+  applyRemoteInteractionToLocalPost,
+  createDeliveryJob
 } from "../../../../lib/oracat/repository";
 
 export const dynamic = "force-dynamic";
@@ -65,9 +66,19 @@ export async function POST(request, { params }) {
       followActivity: activity,
       baseUrl: getBaseUrl(request)
     }).catch(() => {});
+    await createDeliveryJob({
+      type: "deliver_follow_accept",
+      localUsername: username,
+      payload: {
+        account_username: username,
+        remote_actor_url: remoteActor.actor_url,
+        follow_activity: activity,
+        base_url: getBaseUrl(request)
+      }
+    });
   }
 
-  if (activity.type === "Create" && activity.object?.type === "Note") {
+if (activity.type === "Create" && activity.object?.type === "Note") {
     await saveRemotePost({
       id: activity.object.id || activity.id,
       actor_url: activity.actor,
@@ -76,7 +87,9 @@ export async function POST(request, { params }) {
         ? `@${remoteActor.preferred_username}@${new URL(remoteActor.actor_url).host}`
         : activity.actor,
       instance_host: remoteActor ? new URL(remoteActor.actor_url).host : "remote",
+      avatar_url: remoteActor?.avatar_url || "",
       content: stripHtml(activity.object.content || activity.object.name || ""),
+      media: extractRemoteAttachments(activity.object.attachment),
       published_at: activity.object.published || new Date().toISOString(),
       raw_object: activity.object
     });
@@ -116,7 +129,11 @@ export async function POST(request, { params }) {
 }
 
 function stripHtml(value) {
-  return String(value).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const withLinksPreserved = String(value).replace(
+    /<a\s+[^>]*href=["']([^"']+)["'][^>]*>.*?<\/a>/gi,
+    (match, href) => ` ${href} `
+  );
+  return withLinksPreserved.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function safeImportRemoteActor(actorUrl) {
@@ -138,4 +155,17 @@ function extractPostIdFromObject(object, username) {
     return null;
   }
   return objectUrl.slice(index + marker.length);
+}
+// 加一个转换附件的工具函数
+function extractRemoteAttachments(attachments) {
+  if (!Array.isArray(attachments)) {
+    return [];
+  }
+  return attachments
+    .filter((item) => item?.url && String(item.mediaType || "").startsWith("image/"))
+    .map((item) => ({
+      id: item.url,
+      name: item.name || "",
+      url: item.url
+    }));
 }
