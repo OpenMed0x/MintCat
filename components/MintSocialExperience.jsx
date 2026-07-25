@@ -267,6 +267,7 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [searchState, setSearchState] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [expandedFollowing, setExpandedFollowing] = useState(null);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [jobs, setJobs] = useState([]);
@@ -296,9 +297,10 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     refreshTimeline();
   }, [user?.email]);
 
-  useEffect(() => {
+useEffect(() => {
     if (user?.email) {
       refreshFollowing();
+      refreshFollowers();
       refreshJobs();
       refreshProfile();
       refreshNotifications();
@@ -345,6 +347,15 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
     const response = await fetch(`/api/follow?email=${encodeURIComponent(user.email)}`, { cache: "no-store" });
     const payload = await response.json();
     setFollowing(payload.following || []);
+  }
+
+  async function refreshFollowers() {
+    if (!user?.email) {
+      return;
+    }
+    const response = await fetch(`/api/followers?email=${encodeURIComponent(user.email)}`, { cache: "no-store" });
+    const payload = await response.json();
+    setFollowers(payload.followers || []);
   }
 
   async function refreshJobs() {
@@ -493,11 +504,11 @@ async function handleSearch() {
     setSearchState(t.searchQueued);
     startTransition(() => {
       refreshFollowing();
+      refreshFollowers();
       refreshJobs();
     });
   }
-
-  async function handleUnfollow(actorUrl) {
+async function handleUnfollow(actorUrl) {
   if (!user) {
     return;
   }
@@ -514,6 +525,7 @@ async function handleSearch() {
     return;
   }
   refreshFollowing();
+  refreshFollowers();
 }
 
 
