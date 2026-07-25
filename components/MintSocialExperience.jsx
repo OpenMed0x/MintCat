@@ -1141,48 +1141,100 @@ async function mutatePost(postId, action, content = "") {
           ) : null}
         </section>
 
+<section className="mastodon-side-panel mastodon-follow-panel">
+          <p
+            className="section-label"
+            onClick={() => setFollowingPanelExpanded((current) => !current)}
+            style={{ cursor: "pointer" }}
+          >
+            {t.following} {followingPanelExpanded ? "▲" : "▼"} ({following.length})
+          </p>
+          {followingPanelExpanded ? (
+            <div className="community-list">
+              {following.length ? following.map((account) => {
+                const isExpanded = expandedFollowing === account.actorUrl;
+                return (
+                  <article className="community-card mastodon-follow-card" key={account.actorUrl}>
+                    <div
+                      className="follow-card-head"
+                      onClick={() => setExpandedFollowing(isExpanded ? null : account.actorUrl)}
+                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                    >
+                      <div className="avatar-shell" style={{ width: 32, height: 32 }}>
+                        {account.avatarUrl ? (
+                          <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
+                        ) : (
+                          <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <strong>{account.displayName}</strong>
+                        <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
+                      </div>
+                      <span>{isExpanded ? "▲" : "▼"}</span>
+                    </div>
+                    {isExpanded ? (
+                      <div className="follow-card-body">
+                        {account.summary ? <p>{account.summary}</p> : null}
+                        <p>{t.state}: {account.followingState}</p>
+                        <button
+                          className="button button-ghost"
+                          onClick={() => handleUnfollow(account.actorUrl)}
+                          type="button"
+                        >
+                          {locale === "zh" ? "取消关注" : "Unfollow"}
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              }) : <p className="empty-state">{t.noFollowing}</p>}
+            </div>
+          ) : null}
+        </section>
+
         <section className="mastodon-side-panel mastodon-follow-panel">
-          <p className="section-label">{t.following}</p>
-          <div className="community-list">
-            {following.length ? following.map((account) => {
-              const isExpanded = expandedFollowing === account.actorUrl;
-              return (
-                <article className="community-card mastodon-follow-card" key={account.actorUrl}>
-                  <div
-                    className="follow-card-head"
-                    onClick={() => setExpandedFollowing(isExpanded ? null : account.actorUrl)}
-                    style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
-                  >
-                    <div className="avatar-shell" style={{ width: 32, height: 32 }}>
-                      {account.avatarUrl ? (
-                        <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
-                      ) : (
-                        <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
-                      )}
+          <p
+            className="section-label"
+            onClick={() => setFollowerPanelExpanded((current) => !current)}
+            style={{ cursor: "pointer" }}
+          >
+            {locale === "zh" ? "关注我的人" : "Followers"} {followerPanelExpanded ? "▲" : "▼"} ({followers.length})
+          </p>
+          {followerPanelExpanded ? (
+            <div className="community-list">
+              {followers.length ? followers.map((account) => {
+                const isExpanded = expandedFollowing === `follower-${account.actorUrl}`;
+                return (
+                  <article className="community-card mastodon-follow-card" key={account.actorUrl}>
+                    <div
+                      className="follow-card-head"
+                      onClick={() => setExpandedFollowing(isExpanded ? null : `follower-${account.actorUrl}`)}
+                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                    >
+                      <div className="avatar-shell" style={{ width: 32, height: 32 }}>
+                        {account.avatarUrl ? (
+                          <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
+                        ) : (
+                          <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <strong>{account.displayName}</strong>
+                        <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
+                      </div>
+                      <span>{isExpanded ? "▲" : "▼"}</span>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <strong>{account.displayName}</strong>
-                      <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
-                    </div>
-                    <span>{isExpanded ? "▲" : "▼"}</span>
-                  </div>
-                  {isExpanded ? (
-                    <div className="follow-card-body">
-                      {account.summary ? <p>{account.summary}</p> : null}
-                      <p>{t.state}: {account.followingState}</p>
-                      <button
-                        className="button button-ghost"
-                        onClick={() => handleUnfollow(account.actorUrl)}
-                        type="button"
-                      >
-                        {locale === "zh" ? "取消关注" : "Unfollow"}
-                      </button>
-                    </div>
-                  ) : null}
-                </article>
-              );
-            }) : <p className="empty-state">{t.noFollowing}</p>}
-          </div>
+                    {isExpanded ? (
+                      <div className="follow-card-body">
+                        {account.summary ? <p>{account.summary}</p> : null}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              }) : <p className="empty-state">{locale === "zh" ? "还没有人关注你。" : "No followers yet."}</p>}
+            </div>
+          ) : null}
         </section>
 
         <section className="panel mastodon-side-panel">
