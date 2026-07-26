@@ -906,14 +906,15 @@ button {
   grid-template-columns: 1fr 110px;
 }
 
+/*这是改post文两个紫色标识的类*/
 .composer-chip {
   border: 1px solid rgba(91, 75, 210, 0.18);
   background: rgba(249, 247, 255, 0.88);
   color: #5b4bd2;
   border-radius: 14px;
-  min-height: 3rem;
-  padding: 0.7rem 0.9rem;
-  font-size: 0.88rem;
+  min-height: 1rem;
+  padding: 0.7rem 0.5rem;/* 上下，左右*/
+  font-size: 0.81rem;
   font-weight: 600;
   text-align: center;
 }
@@ -2134,4 +2135,30 @@ body {
     width: 100%;
     min-width: 0;
   }
+}
+
+/* 7.26午后给搜索和关注两个新按钮的宽度新加的类*/
+.search-actions-compact {
+  display: flex;
+  justify-content: flex-end;  /* 让按钮居右*/
+  gap: 0.5rem;
+}
+.button-small {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+
+/* 简介文字的样式*/
+.profile-bio-display {
+  font-size: 0.9rem;
+  color: var(--text-muted, #666);
+  margin: 0.5rem 0;
+}
+
+.mastodon-intro-line {
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
 }

@@ -141,7 +141,7 @@ const copy = {
     welcome: "Signed in as"
   },
   zh: {
-    intro: "MintCat 是一个联邦社交平台，支持开放参与、身份迁移与社区自治。",
+    intro: "MintCat是一个联邦社交平台，支持开放参与、身份迁移与社区自治。",
     instances: "实例",
     authors: "作者",
     posts: "帖子",
@@ -288,6 +288,7 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [mediaUploadState, setMediaUploadState] = useState("");
   const composerImageInputRef = useRef(null);
+  const [profileEditing, setProfileEditing] = useState(false);
 
   useEffect(() => {
     setComposerVisibility(locale === "zh" ? "公开，允许转发引用" : "Public, allow quote posts");
@@ -735,6 +736,7 @@ async function mutatePost(postId, action, content = "") {
   return (
     <div className="mastodon-shell">
       <aside className="mastodon-sidebar mastodon-sidebar-left">
+        <p className="mastodon-intro-line">{t.intro}</p>
         <section className="panel mastodon-search-panel">
           <div className="search-input-shell">
             <span className="search-icon">⌕</span>
@@ -746,9 +748,9 @@ async function mutatePost(postId, action, content = "") {
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
-          <div className="search-actions">
-            <button className="button button-ghost" onClick={handleSearch} type="button">{t.searchButton}</button>
-            <button className="button button-primary" onClick={handleFollow} type="button">{t.follow}</button>
+          <div className="search-actions search-actions-compact">
+            <button className="button button-ghost button-small" onClick={handleSearch} type="button">{t.searchButton}</button>
+            <button className="button button-primary button-small" onClick={handleFollow} type="button">{t.follow}</button>
           </div>
           {searchState ? <p className="inline-status">{searchState}</p> : null}
           {searchResult ? (
@@ -760,7 +762,8 @@ async function mutatePost(postId, action, content = "") {
           ) : null}
         </section>
 
-        <section className="panel mastodon-profile-panel mastodon-profile-card">
+       
+       <section className="panel mastodon-profile-panel mastodon-profile-card">
           <div className="mastodon-profile-head">
             <div className="avatar-shell large">
               {profile?.avatarUrl ? (
@@ -777,28 +780,42 @@ async function mutatePost(postId, action, content = "") {
           </div>
           {user ? (
             <>
-              <label className="avatar-upload mastodon-upload">
-                <span>{t.avatarHint}</span>
-                <input type="file" accept="image/*" onChange={handleAvatarUpload} />
-              </label>
-              <div className="profile-editor">
-                <input
-                  aria-label={locale === "zh" ? "昵称" : "Display name"}
-                  value={profileDraft.displayName}
-                  onChange={(event) => setProfileDraft((current) => ({ ...current, displayName: event.target.value }))}
-                />
-                <textarea
-                  aria-label={locale === "zh" ? "简介" : "Bio"}
-                  placeholder={locale === "zh" ? "写一句社区里的自我介绍" : "Add a short profile bio"}
-                  rows={3}
-                  value={profileDraft.bio}
-                  onChange={(event) => setProfileDraft((current) => ({ ...current, bio: event.target.value }))}
-                />
-                <button className="button button-ghost" onClick={saveProfile} type="button">
-                  {locale === "zh" ? "保存资料" : "Save profile"}
-                </button>
-                {profileState ? <p className="inline-status">{profileState}</p> : null}
-              </div>
+              {profile?.bio ? <p className="profile-bio-display">{profile.bio}</p> : null}
+              <button
+                className="button button-ghost button-small"
+                onClick={() => setProfileEditing((current) => !current)}
+                type="button"
+              >
+                {profileEditing
+                  ? (locale === "zh" ? "取消" : "Cancel")
+                  : (locale === "zh" ? "修改资料" : "Edit profile")}
+              </button>
+              {profileEditing ? (
+                <>
+                  <label className="avatar-upload mastodon-upload">
+                    <span>{t.avatarHint}</span>
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+                  </label>
+                  <div className="profile-editor">
+                    <input
+                      aria-label={locale === "zh" ? "昵称" : "Display name"}
+                      value={profileDraft.displayName}
+                      onChange={(event) => setProfileDraft((current) => ({ ...current, displayName: event.target.value }))}
+                    />
+                    <textarea
+                      aria-label={locale === "zh" ? "简介" : "Bio"}
+                      placeholder={locale === "zh" ? "写一句社区里的自我介绍" : "Add a short profile bio"}
+                      rows={3}
+                      value={profileDraft.bio}
+                      onChange={(event) => setProfileDraft((current) => ({ ...current, bio: event.target.value }))}
+                    />
+                    <button className="button button-ghost" onClick={saveProfile} type="button">
+                      {locale === "zh" ? "保存资料" : "Save profile"}
+                    </button>
+                    {profileState ? <p className="inline-status">{profileState}</p> : null}
+                  </div>
+                </>
+              ) : null}
             </>
           ) : (
             <button className="button button-primary mastodon-auth-button" onClick={() => openAuth("signup")} type="button">
@@ -885,21 +902,6 @@ async function mutatePost(postId, action, content = "") {
           {submitState ? <p className="inline-status">{submitState}</p> : null}
         </section>
 
-        <div className="panel mastodon-brand-panel">
-          <div className="brand-block">
-            <MintCatLogo />
-            <div>
-              <p className="brand-kicker">MintCat</p>
-              <h1>MintCat</h1>
-            </div>
-          </div>
-          <p className="rail-copy">{t.intro}</p>
-          <div className="rail-metrics">
-            <div><strong>{summary.instances}</strong><span>{t.instances}</span></div>
-            <div><strong>{summary.authors}</strong><span>{t.authors}</span></div>
-            <div><strong>{summary.posts}</strong><span>{t.posts}</span></div>
-          </div>
-        </div>
 
       </aside>
 
