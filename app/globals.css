@@ -2149,13 +2149,14 @@ body {
 }
 
 
-/* 简介文字的样式*/
+/* 用户简介文字的样式*/
 .profile-bio-display {
   font-size: 0.9rem;
-  color: var(--text-muted, #666);
+  color: var(--text);
   margin: 0.5rem 0;
 }
 
+/* 左边栏顶部文字介绍的类*/
 .mastodon-intro-line {
   font-size: 0.85rem;
   color: var(--text-muted, #888);
