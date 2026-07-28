@@ -1124,7 +1124,9 @@ async function mutatePost(postId, action, content = "") {
           </div>
           {notificationsExpanded ? (
             <div className="notification-list">
-              {notifications.length ? notifications.slice(0, 6).map((entry) => (
+               {/* 移除下面的notifications.slice(0,6).map() 限制，避免只显示6条通知。
+                   通知数量控制改由 CSS max-height + overflow-y 滚动处理。*/}
+              {notifications.length ? notifications.map((entry) => (
                 <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
                   <strong>{entry.actor_display_name || entry.actor_username}</strong>
                   <span>
@@ -1152,7 +1154,7 @@ async function mutatePost(postId, action, content = "") {
             {t.following} {followingPanelExpanded ? "▲" : "▼"} ({following.length})
           </p>
           {followingPanelExpanded ? (
-            <div className="community-list">
+            <div className="community-list"> {/*将来关注人数超过1千，应该做分页加载limit50，而不是.map() */}
               {following.length ? following.map((account) => {
                 const isExpanded = expandedFollowing === account.actorUrl;
                 return (
@@ -1204,7 +1206,7 @@ async function mutatePost(postId, action, content = "") {
             {locale === "zh" ? "关注我的人" : "Followers"} {followerPanelExpanded ? "▲" : "▼"} ({followers.length})
           </p>
           {followerPanelExpanded ? (
-            <div className="community-list">
+            <div className="community-list">{/*将来关注人数超过1000要做分页limit50加载，而非.map */}
               {followers.length ? followers.map((account) => {
                 const isExpanded = expandedFollowing === `follower-${account.actorUrl}`;
                 return (
