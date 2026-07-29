@@ -421,7 +421,7 @@ button {
 
 .section-label {
   margin: 0 0 0.5rem;
-  font-size: 0.68rem;
+  font-size: 0.86rem;/* 浏览器右键，网页源代码，查html，可追溯到对应的前端文字大小使用<p class =这个类>，因此，成功更改“通知、关注/粉丝、投递队列、支付方式”的字体大小*/
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -467,6 +467,7 @@ button {
   align-items: center;
 }
 
+/*这个选择器控制一整组标题*/
 .hero-banner h2,
 .composer h3,
 .timeline h3,
@@ -1137,12 +1138,19 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.mastodon-trend-panel,
-.mastodon-follow-panel {
+.mastodon-trend-panel {
   padding: 0;
   background: transparent;
   border: none;
   box-shadow: none;
+}
+/* 将关注/粉丝列表与上面的趋势分开独立，并恢复透明的background为白色块*/
+.mastodon-follow-panel {
+  padding: 0.5rem;/*修改了白色块的面积*/
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 12px;
 }
 
 .mastodon-follow-card {
@@ -1230,7 +1238,7 @@ button {
   max-height:300px;
   overflow-y:auto;
   overflow-x:hidden;
-}/* 修改我关注的人/关注我的人列表类，让有固定高度和内部滚动*/
+}/* 修改我关注的人/关注我的人/投递列表类，让有固定高度和内部滚动*/
 
 
 .post-card,
@@ -2070,16 +2078,16 @@ body {
 }
 
 .notification-list {
-  display: grid;
-  gap: 0.3rem;
-  max-height: 200px;
-  overflow-y: auto;/*改了右边通知列表的折叠面板*/
+  display: grid;/*控制右边栏的“通知”排列*/
+  gap: 0.3rem;/*通知之间间距*/
+  max-height: 200px;/*限制高度*/
+  overflow-y: auto;/*“通知”超过高度出现滚动条*/
   overflow-x: hidden;
 }
 
 .notification-card {
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--line);
+  padding: 0.75rem 0;/*上下留白*/
+  border-top: 1px solid var(--line);/*顶部横线*/
 }
 
 .notification-card:first-child {
@@ -2092,7 +2100,7 @@ body {
 }
 
 .notification-card span,
-.notification-card p {
+.notification-card p { /*控制通知卡片中的文字大小*/ 
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.55;
@@ -2172,3 +2180,4 @@ body {
   margin: 0 0 0.75rem;
   line-height: 1.4;
 }
+
