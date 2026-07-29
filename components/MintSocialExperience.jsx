@@ -121,7 +121,7 @@ const copy = {
     privateMentions: "私下提及",
     more: "更多",
     hotNow: "当前热门",
-    bookmarks: "书签",
+    bookmarks: "收藏",
     settings: "偏好设置",
     searchAll: "搜索或输入远程链接",
     searchTitle: "远程发现",
@@ -242,7 +242,11 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [paymentExpanded, setPaymentExpanded] = useState(false);   // 新增 
   const [trends, setTrends] = useState([]);   // 当前热门数据
   const [jobs, setJobs] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const [likedPosts, setLikedPosts] = useState([]);
+const [likesExpanded, setLikesExpanded] = useState(false);
+ const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
+const [bookmarksExpanded, setBookmarksExpanded] = useState(false);
+const [profile, setProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", bio: "" });
   const [profileState, setProfileState] = useState("");
   const [notifications, setNotifications] = useState([]);
@@ -278,6 +282,8 @@ useEffect(() => {
       refreshJobs();
       refreshProfile();
       refreshNotifications();
+      refreshLikedPosts();
+      refreshBookmarkedPosts();
     } else {
       setFollowing([]);
       setJobs([]);
@@ -340,6 +346,33 @@ useEffect(() => {
     const payload = await response.json();
     setJobs(payload.jobs || []);
   }
+
+  async function refreshLikedPosts() {
+  if (!user?.email) return;
+
+  const response = await fetch(
+    `/api/liked?email=${encodeURIComponent(user.email)}`
+  );
+
+  const payload = await response.json();
+
+  setLikedPosts(payload.posts || []);
+}
+
+async function refreshBookmarkedPosts() {
+
+  if (!user?.email) return;
+
+  const response = await fetch(
+    `/api/bookmarked?email=${encodeURIComponent(user.email)}`
+  );
+
+  const payload = await response.json();
+
+  setBookmarkedPosts(payload.posts || []);
+
+}
+
 
   async function refreshProfile() {
     if (!user?.email) {
@@ -1216,12 +1249,137 @@ async function mutatePost(postId, action, content = "") {
   ) : null}
      </section>
      
+     {/*喜欢*/}
+   <section className="mastodon-side-panel">
+
+  <div
+    className="side-panel-head"
+    onClick={() => setLikesExpanded((current) => !current)}
+    style={{ cursor: "pointer" }}
+  >
+
+    <button
+      className="mastodon-nav-link"
+      type="button"
+      style={{ flex: 1, justifyContent: "space-between" }}
+    >
+
+      <span>
+        <span className="nav-glyph">♡</span>
+        {t.favoritesTab}
+      </span>
+
+      <span className="flat-row-meta">
+        {likesExpanded ? "▲" : "▼"} ({likedPosts.length})
+      </span>
+
+    </button>
+
+  </div>
+
+
+  {likesExpanded ? (
+    <div className="notification-list">
+
+      {likedPosts.length ? (
+        likedPosts.map((post) => (
+          <article
+            className="notification-card"
+            key={post.id}
+          >
+
+            <strong>
+              {post.author.name}
+            </strong>
+
+            <p>
+              {post.content.slice(0, 80)}
+            </p>
+
+          </article>
+        ))
+      ) : (
+
+        <p className="empty-state">
+          {locale === "zh"
+            ? "还没有喜欢的帖子。"
+            : "No liked posts yet."}
+        </p>
+
+      )}
+
+    </div>
+  ) : null}
+
+</section>
+
      <section className="mastodon-nav-panel mastodon-nav-panel-right">
   <nav className="mastodon-nav">
     <div className="mastodon-nav-divider" />
   <button className="mastodon-nav-link" type="button"><span className="nav-glyph">#</span>{t.followedTags}</button>
-  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">☆</span>{t.favoritesTab}</button>
-  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⌑</span>{t.bookmarks}</button>
+  <section className="mastodon-side-panel">
+
+  <div
+    className="side-panel-head"
+    onClick={() => setBookmarksExpanded((current) => !current)}
+    style={{ cursor: "pointer" }}
+  >
+
+    <button
+      className="mastodon-nav-link"
+      type="button"
+      style={{ flex: 1, justifyContent: "space-between" }}
+    >
+
+      <span>
+        <span className="nav-glyph">🔖</span>
+        {t.bookmarks}
+      </span>
+
+      <span className="flat-row-meta">
+        {bookmarksExpanded ? "▲" : "▼"} ({bookmarkedPosts.length})
+      </span>
+
+    </button>
+
+  </div>
+
+
+  {bookmarksExpanded ? (
+    <div className="notification-list">
+
+      {bookmarkedPosts.length ? (
+
+        bookmarkedPosts.map((post) => (
+          <article
+            className="notification-card"
+            key={post.id}
+          >
+            <strong>
+              {post.author.name}
+            </strong>
+
+            <p>
+              {post.content.slice(0, 80)}
+            </p>
+
+          </article>
+        ))
+
+      ) : (
+
+        <p className="empty-state">
+          {locale === "zh"
+            ? "还没有收藏的帖子。"
+            : "No bookmarks yet."}
+        </p>
+
+      )}
+
+    </div>
+  ) : null}
+
+  </section>
   <button className="mastodon-nav-link" type="button"><span className="nav-glyph">@</span>{t.privateMentions}</button>
   <div className="mastodon-nav-divider" />
   <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⚙</span>{t.settings}</button>
