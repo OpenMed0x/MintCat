@@ -72,7 +72,6 @@ const copy = {
       "MintCat is supported by the community with open funding paths instead of ad inventory.",
     supportCta: "Open support page",
     trendTitle: "Trending topics",
-    trends: ["FederatedDesign", "OpenCommunities", "PortableIdentity"],
     queue: "Delivery queue",
     noJobs: "No federation jobs yet.",
     noFollowing: "No remote follows yet.",
@@ -241,6 +240,7 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [expandedFollowing, setExpandedFollowing] = useState(null);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [paymentExpanded, setPaymentExpanded] = useState(false);   // 新增 
+  const [trends, setTrends] = useState([]);   // 当前热门数据
   const [jobs, setJobs] = useState([]);
   const [profile, setProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", bio: "" });
@@ -270,6 +270,8 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   }, [user?.email]);
 
 useEffect(() => {
+    refreshTrends();//新增
+    
     if (user?.email) {
       refreshFollowing();
       refreshFollowers();
@@ -361,6 +363,16 @@ useEffect(() => {
     const payload = await response.json();
     setNotifications(payload.notifications || []);
   }
+
+  // 新增：当前热门
+async function refreshTrends() {
+  const response = await fetch("/api/trends", { cache: "no-store" });
+
+  const payload = await response.json();
+
+  setTrends(payload.trends || []);
+}
+  
 
   async function saveProfile() {
     if (!user?.email) {
@@ -1224,15 +1236,24 @@ async function mutatePost(postId, action, content = "") {
 
         {/*当前热门*/}<section className="mastodon-side-panel mastodon-trend-panel">
           <p className="section-label">{t.hotNow}</p>
-          <div className="trend-list">
-            {t.trends.map((trend, index) => (
-              <article className="trend-card" key={trend}>
-                <strong>#{trend}</strong>
-                <span>{locale === "zh" ? `过去 2 天 ${96 + index * 38} 人讨论` : `${96 + index * 38} people talking`}</span>
-                <i className={`trend-spark trend-spark-${index + 1}`} aria-hidden="true" />
-              </article>
-            ))}
-          </div>
+         <div className="trend-list">
+         {trends.map((trend, index) => (
+         <article className="trend-card" key={trend.tag}>
+        <strong>#{trend.tag}</strong>
+
+      <span>
+        {locale === "zh"
+          ? `过去讨论 ${trend.score} 次`
+          : `${trend.score} discussions`}
+      </span>
+
+      <i
+        className={`trend-spark trend-spark-${index + 1}`}
+        aria-hidden="true"
+      />
+    </article>
+  ))}
+</div>
         </section>
 
       </aside>
