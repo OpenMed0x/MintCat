@@ -21,39 +21,6 @@ const emojiLibrary = [
   "🫶", "👍", "👏", "🙏", "💡", "🚀", "🌍", "🪴", "🍃", "🕊️"
 ];
 
-const paymentMethods = [
-  {
-    key: "alipay",
-    label: "Alipay",
-    zh: "支付宝",
-    href: process.env.NEXT_PUBLIC_MINTCAT_ALIPAY_URL || "#"
-  },
-  {
-    key: "wechat",
-    label: "WeChat Pay",
-    zh: "微信支付",
-    href: process.env.NEXT_PUBLIC_MINTCAT_WECHAT_URL || "#"
-  },
-  {
-    key: "stripe",
-    label: "Stripe",
-    zh: "Stripe",
-    href: process.env.NEXT_PUBLIC_MINTCAT_STRIPE_URL || "#"
-  },
-  {
-    key: "github",
-    label: "GitHub Sponsors",
-    zh: "GitHub 赞助",
-    href: process.env.NEXT_PUBLIC_MINTCAT_GITHUB_URL || "#"
-  },
-  {
-    key: "visa",
-    label: "Visa / Card",
-    zh: "Visa / 银行卡",
-    href: process.env.NEXT_PUBLIC_MINTCAT_VISA_URL || "#"
-  }
-];
-
 const copy = {
   en: {
     intro:
@@ -273,6 +240,7 @@ export default function MintSocialExperience({ user, openAuth, locale = "zh" }) 
   const [followerPanelExpanded, setFollowerPanelExpanded] = useState(false);
   const [expandedFollowing, setExpandedFollowing] = useState(null);
   const [jobsExpanded, setJobsExpanded] = useState(false);
+  const [paymentExpanded, setPaymentExpanded] = useState(false);   // 新增 
   const [jobs, setJobs] = useState([]);
   const [profile, setProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", bio: "" });
@@ -1062,32 +1030,199 @@ async function mutatePost(postId, action, content = "") {
           <MintCatLogo small className="mintcat-logo small" />
           <strong>MintCat</strong>
         </section>
-
         <section className="mastodon-nav-panel mastodon-nav-panel-right">
-          <nav className="mastodon-nav">
-            <button className={`mastodon-nav-link${activeTab === "federated" ? " is-active" : ""}`} onClick={() => setActiveTab("federated")} type="button">
-              <span className="nav-glyph">⌂</span>{t.home}
-            </button>
-            <button className={`mastodon-nav-link${activeTab === "local" ? " is-active" : ""}`} onClick={() => setActiveTab("local")} type="button">
-              <span className="nav-glyph">◍</span>{t.local}
-            </button>
-            <button className={`mastodon-nav-link${activeTab === "community" ? " is-active" : ""}`} onClick={() => setActiveTab("community")} type="button">
-              <span className="nav-glyph">⌁</span>{t.hotNow}
-            </button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">◌</span>{t.notifications}</button>
-            <div className="mastodon-nav-divider" />
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">▣</span>{t.lists}</button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">#</span>{t.followedTags}</button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">☆</span>{t.favoritesTab}</button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⌑</span>{t.bookmarks}</button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">@</span>{t.privateMentions}</button>
-            <div className="mastodon-nav-divider" />
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⚙</span>{t.settings}</button>
-            <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⋯</span>{t.more}</button>
-          </nav>
+      <nav className="mastodon-nav"></nav>
+        </section>
+      {/*通知 */}<section className="mastodon-side-panel">
+  <div
+    className="side-panel-head"
+    onClick={() => setNotificationsExpanded((current) => !current)}
+    style={{ cursor: "pointer" }}
+  >
+    <button
+      className="mastodon-nav-link"
+      type="button"
+      style={{ flex: 1, justifyContent: "space-between" }}
+    >
+      <span><span className="nav-glyph">🔔</span>{t.notifications}</span>
+      <span className="flat-row-meta">{notificationsExpanded ? "▲" : "▼"} ({notifications.length})</span>
+    </button>
+    {notificationsExpanded && notifications.some((entry) => !entry.read_at) ? (
+      <button
+        className="mini-action"
+        onClick={(event) => {
+          event.stopPropagation();
+          markNotificationsRead();
+        }}
+        type="button"
+      >
+        {locale === "zh" ? "全部已读" : "Mark read"}
+      </button>
+    ) : null}
+  </div>
+  {notificationsExpanded ? (
+    <div className="notification-list">
+      {notifications.length ? notifications.map((entry) => (
+        <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
+          <strong>{entry.actor_display_name || entry.actor_username}</strong>
+          <span>
+            {entry.type === "comment"
+              ? (locale === "zh" ? "评论了你的帖子" : "replied to your post")
+              : entry.type === "boost"
+                ? (locale === "zh" ? "转发了你的帖子" : "boosted your post")
+                : entry.type === "follow"
+                  ? (locale === "zh" ? "关注了你" : "followed you")
+                  : (locale === "zh" ? "赞了你的帖子" : "liked your post")}
+          </span>
+          {entry.summary ? <p>{entry.summary}</p> : null}
+        </article>
+      )) : <p className="empty-state">{locale === "zh" ? "还没有通知。" : "No notifications yet."}</p>}
+    </div>
+  ) : null}
+      </section>
+
+      {/*我关注的人*/}<section className="mastodon-side-panel mastodon-follow-panel">
+  <button
+    className="mastodon-nav-link"
+    onClick={() => setFollowingPanelExpanded((current) => !current)}
+    type="button"
+    style={{ width: "100%", justifyContent: "space-between" }}
+  >
+    <span><span className="nav-glyph">  ◍  </span>{t.following}</span>
+    <span className="flat-row-meta">{followingPanelExpanded ? "▲" : "▼"} ({following.length})</span>
+  </button>
+  {followingPanelExpanded ? (
+    <div className="community-list">
+      {following.length ? following.map((account) => {
+        const isExpanded = expandedFollowing === account.actorUrl;
+        return (
+          <article className="community-card mastodon-follow-card" key={account.actorUrl}>
+            <div
+              className="follow-card-head"
+              onClick={() => setExpandedFollowing(isExpanded ? null : account.actorUrl)}
+              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <div className="avatar-shell" style={{ width: 32, height: 32 }}>
+                {account.avatarUrl ? (
+                  <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
+                ) : (
+                  <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <strong>{account.displayName}</strong>
+                <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
+              </div>
+              <span>{isExpanded ? "▲" : "▼"}</span>
+            </div>
+            {isExpanded ? (
+              <div className="follow-card-body">
+                {account.summary ? <p>{account.summary}</p> : null}
+                <p>{t.state}: {account.followingState}</p>
+                <button
+                  className="button button-ghost"
+                  onClick={() => handleUnfollow(account.actorUrl)}
+                  type="button"
+                >
+                  {locale === "zh" ? "取消关注" : "Unfollow"}
+                </button>
+              </div>
+            ) : null}
+          </article>
+        );
+      }) : <p className="empty-state">{t.noFollowing}</p>}
+    </div>
+  ) : null}
+      </section>
+
+      {/*关注我的人 */}<section className="mastodon-side-panel mastodon-follow-panel">
+  <button
+    className="mastodon-nav-link"
+    onClick={() => setFollowerPanelExpanded((current) => !current)}
+    type="button"
+    style={{ width: "100%", justifyContent: "space-between" }}
+  >
+    <span><span className="nav-glyph">◎</span>{locale === "zh" ? "关注我的人" : "Followers"}</span>
+    <span className="flat-row-meta">{followerPanelExpanded ? "▲" : "▼"} ({followers.length})</span>
+  </button>
+  {followerPanelExpanded ? (
+    <div className="community-list">
+      {followers.length ? followers.map((account) => {
+        const isExpanded = expandedFollowing === `follower-${account.actorUrl}`;
+        return (
+          <article className="community-card mastodon-follow-card" key={account.actorUrl}>
+            <div
+              className="follow-card-head"
+              onClick={() => setExpandedFollowing(isExpanded ? null : `follower-${account.actorUrl}`)}
+              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <div className="avatar-shell" style={{ width: 32, height: 32 }}>
+                {account.avatarUrl ? (
+                  <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
+                ) : (
+                  <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <strong>{account.displayName}</strong>
+                <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
+              </div>
+              <span>{isExpanded ? "▲" : "▼"}</span>
+            </div>
+            {isExpanded ? (
+              <div className="follow-card-body">
+                {account.summary ? <p>{account.summary}</p> : null}
+              </div>
+            ) : null}
+          </article>
+        );
+      }) : <p className="empty-state">{locale === "zh" ? "还没有人关注你。" : "No followers yet."}</p>}
+    </div>
+  ) : null}
+      </section>
+      
+     {/*投递列表*/}<section className="mastodon-side-panel">
+  <button
+    className="mastodon-nav-link"
+    onClick={() => setJobsExpanded((current) => !current)}
+    type="button"
+    style={{ width: "100%", justifyContent: "space-between" }}
+  >
+    <span><span className="nav-glyph">⇄</span>{t.queue}</span>
+    <span className="flat-row-meta">{jobsExpanded ? "▲" : "▼"} ({jobs.length})</span>
+  </button>
+  {jobsExpanded ? (
+    <div className="community-list">
+      {jobs.length ? jobs.map((job) => (
+        <article className="community-card" key={job.id}>
+          <strong>{job.job_type}</strong>
+          <span>{job.state}</span>
+          <p>{t.attempts}: {job.attempt_count} / {job.max_attempts}</p>
+        </article>
+      )) : <p className="empty-state">{t.noJobs}</p>}
+    </div>
+  ) : null}
+     </section>
+     
+     <section className="mastodon-nav-panel mastodon-nav-panel-right">
+  <nav className="mastodon-nav">
+    <div className="mastodon-nav-divider" />
+  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">#</span>{t.followedTags}</button>
+  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">☆</span>{t.favoritesTab}</button>
+  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⌑</span>{t.bookmarks}</button>
+  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">@</span>{t.privateMentions}</button>
+  <div className="mastodon-nav-divider" />
+  <button className="mastodon-nav-link" type="button"><span className="nav-glyph">⚙</span>{t.settings}</button>
+   </nav>
+     </section>  
+
+        {/* 更多*/} <section className="mastodon-side-panel">
+        <button className="mastodon-nav-link" type="button" style={{ width: "100%" }}>
+       <span className="nav-glyph">⋯</span>{t.more}
+       </button>
         </section>
 
-        <section className="mastodon-side-panel mastodon-trend-panel">
+        {/*当前热门*/}<section className="mastodon-side-panel mastodon-trend-panel">
           <p className="section-label">{t.hotNow}</p>
           <div className="trend-list">
             {t.trends.map((trend, index) => (
@@ -1100,192 +1235,6 @@ async function mutatePost(postId, action, content = "") {
           </div>
         </section>
 
-<section className="panel mastodon-side-panel">
-          <div
-            className="side-panel-head"
-            onClick={() => setNotificationsExpanded((current) => !current)}
-            style={{ cursor: "pointer" }}
-          >
-            <p className="section-label">
-              {t.notifications} {notificationsExpanded ? "▲" : "▼"} ({notifications.length})
-            </p>
-            {notificationsExpanded && notifications.some((entry) => !entry.read_at) ? (
-              <button
-                className="mini-action"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  markNotificationsRead();
-                }}
-                type="button"
-              >
-                {locale === "zh" ? "全部已读" : "Mark read"}
-              </button>
-            ) : null}
-          </div>
-          {notificationsExpanded ? (
-            <div className="notification-list">
-               {/* 移除下面的notifications.slice(0,6).map() 限制，避免只显示6条通知。
-                   通知数量控制改由 CSS max-height + overflow-y 滚动处理。*/}
-              {notifications.length ? notifications.map((entry) => (
-                <article className={`notification-card${entry.read_at ? "" : " is-unread"}`} key={entry.id}>
-                  <strong>{entry.actor_display_name || entry.actor_username}</strong>
-                  <span>
-                    {entry.type === "comment"
-                      ? (locale === "zh" ? "评论了你的帖子" : "replied to your post")
-                      : entry.type === "boost"
-                        ? (locale === "zh" ? "转发了你的帖子" : "boosted your post")
-                        : entry.type === "follow"
-                          ? (locale === "zh" ? "关注了你" : "followed you")
-                          : (locale === "zh" ? "赞了你的帖子" : "liked your post")}
-                  </span>
-                  {entry.summary ? <p>{entry.summary}</p> : null}
-                </article>
-              )) : <p className="empty-state">{locale === "zh" ? "还没有通知。" : "No notifications yet."}</p>}
-            </div>
-          ) : null}
-        </section>
-
-<section className="mastodon-side-panel mastodon-follow-panel">
-          <p
-            className="section-label"
-            onClick={() => setFollowingPanelExpanded((current) => !current)}
-            style={{ cursor: "pointer" }}
-          >
-            {t.following} {followingPanelExpanded ? "▲" : "▼"} ({following.length})
-          </p>
-          {followingPanelExpanded ? (
-            <div className="community-list"> {/*将来关注人数超过1千，应该做分页加载limit50，而不是.map() */}
-              {following.length ? following.map((account) => {
-                const isExpanded = expandedFollowing === account.actorUrl;
-                return (
-                  <article className="community-card mastodon-follow-card" key={account.actorUrl}>
-                    <div
-                      className="follow-card-head"
-                      onClick={() => setExpandedFollowing(isExpanded ? null : account.actorUrl)}
-                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
-                    >
-                      <div className="avatar-shell" style={{ width: 32, height: 32 }}>
-                        {account.avatarUrl ? (
-                          <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
-                        ) : (
-                          <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <strong>{account.displayName}</strong>
-                        <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
-                      </div>
-                      <span>{isExpanded ? "▲" : "▼"}</span>
-                    </div>
-                    {isExpanded ? (
-                      <div className="follow-card-body">
-                        {account.summary ? <p>{account.summary}</p> : null}
-                        <p>{t.state}: {account.followingState}</p>
-                        <button
-                          className="button button-ghost"
-                          onClick={() => handleUnfollow(account.actorUrl)}
-                          type="button"
-                        >
-                          {locale === "zh" ? "取消关注" : "Unfollow"}
-                        </button>
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              }) : <p className="empty-state">{t.noFollowing}</p>}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="mastodon-side-panel mastodon-follow-panel">
-          <p
-            className="section-label"
-            onClick={() => setFollowerPanelExpanded((current) => !current)}
-            style={{ cursor: "pointer" }}
-          >
-            {locale === "zh" ? "关注我的人" : "Followers"} {followerPanelExpanded ? "▲" : "▼"} ({followers.length})
-          </p>
-          {followerPanelExpanded ? (
-            <div className="community-list">{/*将来关注人数超过1000要做分页limit50加载，而非.map */}
-              {followers.length ? followers.map((account) => {
-                const isExpanded = expandedFollowing === `follower-${account.actorUrl}`;
-                return (
-                  <article className="community-card mastodon-follow-card" key={account.actorUrl}>
-                    <div
-                      className="follow-card-head"
-                      onClick={() => setExpandedFollowing(isExpanded ? null : `follower-${account.actorUrl}`)}
-                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
-                    >
-                      <div className="avatar-shell" style={{ width: 32, height: 32 }}>
-                        {account.avatarUrl ? (
-                          <img src={account.avatarUrl} alt={account.displayName} className="avatar-image" />
-                        ) : (
-                          <span>{account.displayName?.slice(0, 1).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <strong>{account.displayName}</strong>
-                        <span style={{ display: "block", fontSize: "0.85em", opacity: 0.7 }}>{account.handle}</span>
-                      </div>
-                      <span>{isExpanded ? "▲" : "▼"}</span>
-                    </div>
-                    {isExpanded ? (
-                      <div className="follow-card-body">
-                        {account.summary ? <p>{account.summary}</p> : null}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              }) : <p className="empty-state">{locale === "zh" ? "还没有人关注你。" : "No followers yet."}</p>}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="panel mastodon-side-panel">
-          <p className="section-label">{t.paymentTitle}</p>
-          <h3>{t.supportTitle}</h3>
-          <p className="empty-state">{t.supportBody}</p>
-          <div className="payment-grid">
-            {paymentMethods.map((method) => (
-              <a
-                className={`payment-chip${method.href === "#" ? " is-disabled" : ""}`}
-                href={method.href}
-                key={method.key}
-                target={method.href.startsWith("http") ? "_blank" : undefined}
-                rel={method.href.startsWith("http") ? "noreferrer" : undefined}
-              >
-                <strong>{locale === "zh" ? method.zh : method.label}</strong>
-                <span>{method.href === "#" ? "Pending" : t.visitPayment}</span>
-              </a>
-            ))}
-          </div>
-          <div className="payment-actions">
-            <Link className="button button-primary support-link" href="/support">{t.supportCta}</Link>
-            <a className="button button-ghost" href="/support">{locale === "zh" ? "配置支付方式" : "Configure payments"}</a>
-          </div>
-          <p className="support-mini-note">{t.paymentHint}</p>
-        </section>
-
-<section className="panel mastodon-side-panel">
-          <p
-            className="section-label"
-            onClick={() => setJobsExpanded((current) => !current)}
-            style={{ cursor: "pointer" }}
-          >
-            {t.queue} {jobsExpanded ? "▲" : "▼"} ({jobs.length})
-          </p>
-          {jobsExpanded ? (
-            <div className="community-list">
-              {jobs.length ? jobs.map((job) => (
-                <article className="community-card" key={job.id}>
-                  <strong>{job.job_type}</strong>
-                  <span>{job.state}</span>
-                  <p>{t.attempts}: {job.attempt_count} / {job.max_attempts}</p>
-                </article>
-              )) : <p className="empty-state">{t.noJobs}</p>}
-            </div>
-          ) : null}
-        </section>
       </aside>
     </div>
   );

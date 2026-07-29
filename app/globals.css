@@ -1145,12 +1145,20 @@ button {
   box-shadow: none;
 }
 /* 将关注/粉丝列表与上面的趋势分开独立，并恢复透明的background为白色块*/
-.mastodon-follow-panel {
-  padding: 0.5rem;/*修改了白色块的面积*/
+/*.mastodon-follow-panel {
+  padding: 0.5rem 0;修改了白色块的面积
   background: #fff;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   border-radius: 12px;
+}，7.29午后移除白块*/
+
+.mastodon-follow-panel {
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .mastodon-follow-card {
@@ -2181,3 +2189,54 @@ body {
   line-height: 1.4;
 }
 
+/* 右栏紧凑化 */
+.mastodon-sidebar-right {
+  gap: 0.5rem;                 /* 原来继承 1rem，收紧面板之间的垂直间距 */
+}
+
+/* 普通侧栏面板 */
+.mastodon-sidebar-right .panel{
+  padding: 0.5rem;
+}
+
+/* 通知列表 */
+.mastodon-sidebar-right .notification-panel {
+  padding: 0.1rem;
+}
+
+/* 侧边模块 */
+.mastodon-sidebar-right .mastodon-side-panel {
+  padding: 0.2rem;
+}
+
+/* 关注列表 */
+.mastodon-sidebar-right .mastodon-follow-panel {
+  padding: 0.1rem;    
+}
+
+/* 投递队列 */
+.mastodon-sidebar-right .relay-panel {
+  padding: 0.1rem;
+}
+
+.mastodon-sidebar-right .section-label {
+  margin: 0;                   /* 原来 section-label 默认 margin-bottom 0.5rem，折叠状态下不需要底部间距 */
+}
+
+.mastodon-sidebar-right .side-panel-head {
+  margin: 0;
+}
+
+/* 图标和文字之间的间距：nav-glyph 加右边距，而不是靠 gap */
+.mastodon-nav-link .nav-glyph {
+  display: inline-flex;
+  width: 1.5rem;
+  justify-content: center;
+  margin-right: 0.5rem;
+  flex-shrink: 0;/*防止按钮压缩时图标区域变形 */
+}
+
+/*移除右边栏的分界线*/
+.mastodon-sidebar-right .mastodon-nav-divider {
+  display: none;
+}
